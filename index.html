@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Downloads</title>
+    <style>
+        /* ===== Reset and Base Styles ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 0;
+            position: relative;
+        }
+
+        /* ===== Main Container ===== */
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* ===== Top Green Bar Header ===== */
+        .top-header {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 20px;
+        }
+
+        .top-header .logo-container {
+            display: flex;
+            align-items: center;
+            flex: 0 0 auto;
+        }
+
+        .top-header .header-title {
+            flex: 1;
+            text-align: center;
+            color: white;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase;
+        }
+
+        .top-header .logo-img {
+            height: 60px;
+            width: auto;
+            max-width: 80px;
+            object-fit: contain;
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .top-header .logo-img:hover {
+            transform: scale(1.05);
+        }
+
+        /* ===== Content Area ===== */
+        .content-area {
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: calc(100vh - 100px);
+        }
+
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== Video Grid ===== */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            justify-content: center;
+            width: 100%;
+            max-width: 1400px;
+            animation: fadeIn 0.6s ease-out;
+            padding: 0 20px;
+        }
+
+        /* ===== Video Card ===== */
+        .video-card {
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #e0e0e0;
+            width: 100%;
+        }
+
+        .video-card:hover {
+            border-color: #2ecc71;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Video Player Container (Thumbnail) */
+        .video-player-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .video-thumbnail-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: pointer;
+        }
+
+        .play-button-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+
+        .play-button-overlay:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            background: #2ecc71;
+        }
+
+        .play-button-overlay::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 16px 0 16px 28px;
+            border-color: transparent transparent transparent #2ecc71;
+            margin-left: 6px;
+        }
+
+        .play-button-overlay:hover::after {
+            border-color: transparent transparent transparent #fff;
+        }
+
+        .play-button-overlay.hidden {
+            display: none;
+        }
+
+        /* ===== Modal Video Player ===== */
+        .video-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .video-modal.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .video-modal-content {
+            width: 90%;
+            max-width: 1200px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-modal-header {
+            background: #2a2a2a;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .video-modal-title {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .video-modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .video-modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .video-modal-player-container {
+            position: relative;
+            background: #000;
+            aspect-ratio: 16 / 9;
+        }
+
+        .video-modal-player {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            max-height: 70vh;
+            display: block;
+        }
+
+        .video-modal-controls {
+            background: #2a2a2a;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .video-playback-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .playback-btn {
+            padding: 12px 20px;
+            background: #3a3a3a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        .playback-btn:hover {
+            background: #4a4a4a;
+        }
+
+        .playback-btn.play-pause-btn {
+            background: #2ecc71;
+            min-width: 140px;
+            padding: 14px 24px;
+            font-size: 15px;
+        }
+
+        .playback-btn.play-pause-btn:hover {
+            background: #27ae60;
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 14px 28px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-btn:hover {
+            background: #2ecc71;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+        }
+
+        .video-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: white;
+        }
+
+        .video-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #007300;
+            text-align: center;
+            line-height: 1.4;
+            letter-spacing: 0.3px;
+        }
+
+        .video-subtitle {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        .video-info-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .video-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: #f0f0f0;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .video-size {
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+            font-weight: 600;
+            padding: 4px 0;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 14px 20px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .download-btn:hover {
+            background: #2ecc71;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+        }
+
+        .download-btn:active {
+            transform: translateY(0);
+        }
+
+        .download-icon {
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .download-icon::before {
+            content: '⬇';
+            color: #000;
+            font-weight: 700;
+        }
+
+        .download-btn:hover .download-icon::before {
+            color: #2ecc71;
+        }
+
+        /* ===== Empty State ===== */
+        .empty-state {
+            background: white;
+            border-radius: 20px;
+            padding: 80px 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            min-height: 450px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #e0e0e0;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .empty-state .icon {
+            font-size: 100px;
+            margin-bottom: 25px;
+            opacity: 0.25;
+            filter: grayscale(100%);
+        }
+
+        .empty-state h2 {
+            color: #1e293b;
+            font-size: 28px;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        .empty-state p {
+            color: #64748b;
+            font-size: 16px;
+            line-height: 1.7;
+            max-width: 550px;
+            margin: 0 auto;
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 50px;
+            padding: 25px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            max-width: 800px;
+            margin: 50px auto 0;
+        }
+
+        .footer p {
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* ===== Responsive Design ===== */
+        @media (max-width: 768px) {
+            .top-header {
+                padding: 15px 20px;
+            }
+
+            .top-header .header-title {
+                font-size: 24px;
+            }
+
+            .top-header .logo-img {
+                height: 50px;
+            }
+
+            .content-area {
+                padding: 30px 15px;
+            }
+
+            .video-grid {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+
+            .video-card {
+                max-width: 100%;
+            }
+
+            .video-player-container {
+                height: 250px;
+            }
+
+            .video-modal-content {
+                width: 95%;
+            }
+
+            .video-modal-player {
+                max-height: 50vh;
+            }
+
+            .empty-state {
+                padding: 60px 30px;
+                min-height: 380px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .top-header {
+                padding: 12px 15px;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .top-header .header-title {
+                font-size: 20px;
+                order: -1;
+            }
+
+            .top-header .logo-container {
+                display: inline-flex;
+            }
+
+            .top-header .logo-img {
+                height: 45px;
+            }
+
+            .content-area {
+                padding: 25px 12px;
+            }
+
+            .video-player-container {
+                height: 220px;
+            }
+
+            .video-content {
+                padding: 18px;
+            }
+
+            .video-title {
+                font-size: 16px;
+            }
+
+            .playback-btn {
+                padding: 10px 16px;
+                font-size: 13px;
+                min-width: 90px;
+            }
+
+            .playback-btn.play-pause-btn {
+                min-width: 120px;
+                padding: 12px 20px;
+            }
+
+            .action-btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            .download-btn {
+                padding: 14px 18px;
+                font-size: 14px;
+            }
+
+            .empty-state {
+                padding: 50px 25px;
+                min-height: 350px;
+            }
+
+            .empty-state .icon {
+                font-size: 70px;
+            }
+
+            .empty-state h2 {
+                font-size: 24px;
+            }
+
+            .empty-state p {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== Top Green Header Bar ===== -->
+    <div class="top-header">
+        <div class="logo-container">
+            <img src="images/flag-logo.jpeg" alt="Flag Logo" class="logo-img">
+        </div>
+        <h1 class="header-title">Nepali Congress</h1>
+        <div class="logo-container">
+            <img src="images/tree-logo.jpeg" alt="Tree Logo" class="logo-img">
+        </div>
+    </div>
+
+    <!-- ===== Main Content Area ===== -->
+    <div class="content-area">
+        <div class="container">
+            <!-- Video Grid Container -->
+            <div class="video-grid" id="videoGrid">
+                <!-- Videos will be dynamically inserted here -->
+            </div>
+
+            <!-- Empty State (shown when no videos) -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="icon">📁</div>
+                <h2>No Videos Available</h2>
+                <p>Add your Google Drive video file IDs to the video configuration in the code to display them here. Each video should include a Drive file ID, title, and size.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Video Modal Player ===== -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-modal-content">
+            <div class="video-modal-header">
+                <div class="video-modal-title" id="modalVideoTitle"></div>
+                <button class="video-modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="video-modal-player-container">
+                <iframe class="video-modal-player" id="modalVideo" frameborder="0" allow="autoplay; fullscreen" allowfullscreen>
+                </iframe>
+            </div>
+            <div class="video-modal-controls">
+                <div class="video-actions">
+                    <button class="action-btn" id="downloadVideoBtn">📥 Download</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== VIDEO CONFIGURATION =====
+        // Add your Google Drive video file IDs here
+        const videos = [
+            {
+                driveFileId: '1fvQBAroFS1YVfHG60xweuWe21dHigvqL',
+                title: 'Rajendra Kumar Ghimire',
+                subtitle: '[Official Music Video]',
+                size: '550 MB',
+                thumbnail: 'images/thumbnail1.png',
+                icon: '🎥'
+            }
+            // Add more videos here:
+            // {
+            //     driveFileId: 'YOUR_GOOGLE_DRIVE_FILE_ID',
+            //     title: 'MY VIDEO',
+            //     subtitle: 'Description\nSecond Line',
+            //     size: '25 MB',
+            //     thumbnail: 'images/thumbnail2.png',
+            //     icon: '🎬'
+            // }
+        ];
+
+        // ===== Get DOM Elements =====
+        const videoGrid = document.getElementById('videoGrid');
+        const emptyState = document.getElementById('emptyState');
+        const videoModal = document.getElementById('videoModal');
+        const modalVideo = document.getElementById('modalVideo');
+        const modalVideoTitle = document.getElementById('modalVideoTitle');
+        const closeModal = document.getElementById('closeModal');
+        const downloadVideoBtn = document.getElementById('downloadVideoBtn');
+
+        // Current video data for download
+        let currentVideoData = {};
+
+        // ===== Download Function =====
+        const downloadVideo = (driveFileId, title) => {
+            // Open Google Drive download link in new tab
+            const downloadUrl = `https://drive.google.com/uc?export=download&id=${driveFileId}`;
+            window.open(downloadUrl, '_blank');
+            console.log(`Opening download for: ${title}`);
+        };
+
+        // ===== Open Video Modal =====
+        const openVideoModal = (videoUrl, videoTitle, driveFileId) => {
+            currentVideoData = { driveFileId: driveFileId, title: videoTitle };
+            modalVideo.src = videoUrl;
+            modalVideoTitle.textContent = videoTitle;
+            videoModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        // ===== Close Video Modal =====
+        const closeVideoModal = () => {
+            videoModal.classList.remove('active');
+            modalVideo.src = '';
+            document.body.style.overflow = 'auto';
+        };
+
+
+
+        // ===== Close Modal Events =====
+        closeModal.addEventListener('click', closeVideoModal);
+
+        // Close on background click
+        videoModal.addEventListener('click', (e) => {
+            if (e.target === videoModal) {
+                closeVideoModal();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && videoModal.classList.contains('active')) {
+                closeVideoModal();
+            }
+        });
+
+        // ===== Download from Modal =====
+        downloadVideoBtn.addEventListener('click', () => {
+            downloadVideo(currentVideoData.driveFileId, currentVideoData.title);
+        });
+
+        // ===== Create Video Card =====
+        const createVideoCard = (video) => {
+            // Create card container
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            
+            // Build video player section
+            let videoPlayerHTML = '';
+            const videoUrl = `https://drive.google.com/file/d/${video.driveFileId}/preview`;
+            const thumbnailUrl = video.thumbnail || `https://drive.google.com/thumbnail?id=${video.driveFileId}&sz=w1000`;
+            
+            videoPlayerHTML = `
+                <div class="video-player-container">
+                    <img class="video-thumbnail-img" src="${thumbnailUrl}" alt="${video.title}">
+                    <div class="play-button-overlay"></div>
+                </div>
+            `;
+            
+            // Format subtitle with line breaks
+            const subtitleLines = video.subtitle ? video.subtitle.split('\n').map(line => 
+                `<div>${line}</div>`
+            ).join('') : '';
+            
+            // Build card HTML
+            card.innerHTML = `
+                ${videoPlayerHTML}
+                <div class="video-content">
+                    <div class="video-title">${video.title}</div>
+                    ${subtitleLines ? `<div class="video-subtitle">${subtitleLines}</div>` : ''}
+                    <div class="video-info-row">
+                        <span class="video-badge">🎥 Video</span>
+                        <span class="video-badge">📦 ${video.size}</span>
+                    </div>
+                    <button class="download-btn">
+                        <span class="download-icon"></span>
+                        <span>Download</span>
+                    </button>
+                </div>
+            `;
+            
+            // Get elements
+            const playButton = card.querySelector('.play-button-overlay');
+            const thumbnail = card.querySelector('.video-thumbnail-img');
+            const container = card.querySelector('.video-player-container');
+            const downloadBtn = card.querySelector('.download-btn');
+            
+            // Add click event to play button
+            playButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openVideoModal(videoUrl, video.title, video.driveFileId);
+            });
+            
+            // Add click event to thumbnail
+            thumbnail.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openVideoModal(videoUrl, video.title, video.driveFileId);
+            });
+            
+            // Add click event to download button
+            downloadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                downloadVideo(video.driveFileId, video.title);
+            });
+            
+            return card;
+        };
+
+        // ===== Initialize Page =====
+        const initializePage = () => {
+            // Check if there are videos to display
+            if (videos.length === 0) {
+                // Show empty state
+                emptyState.style.display = 'flex';
+                videoGrid.style.display = 'none';
+            } else {
+                // Hide empty state and show grid
+                emptyState.style.display = 'none';
+                videoGrid.style.display = 'grid';
+                
+                // Create and append video cards
+                videos.forEach(video => {
+                    const card = createVideoCard(video);
+                    videoGrid.appendChild(card);
+                });
+            }
+        };
+
+        // ===== Run on Page Load =====
+        initializePage();
+    </script>
+</body>
+</html>
